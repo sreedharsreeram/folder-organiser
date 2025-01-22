@@ -6,7 +6,7 @@ Clone the repository:
 ```sh
 git clone https://github.com/sreedharsreeram/folder-organiser
 ```
-Run:
+Run the code:
 ```sh
 python gui.py
 ```
