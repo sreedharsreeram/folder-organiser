@@ -1,6 +1,7 @@
 import os 
 import collections
 import shutil
+import hashlib
 
 def get_folder_path():
     user_path = os.path.expanduser('~')
@@ -40,31 +41,55 @@ def get_folder_path():
         else:
             print("Invalid choice. Please try again.")
 
+def get_file_hash(file_path):
+    """Calculate MD5 hash of a file."""
+    hash_md5 = hashlib.md5()
+    with open(file_path, "rb") as f:
+        for chunk in iter(lambda: f.read(4096), b""):
+            hash_md5.update(chunk)
+    return hash_md5.hexdigest()
+
 def organize_files(folder_path):
     if not folder_path:
         return
     
     print(f"\nOrganizing files in: {folder_path}")
     
-    
     file_mapping = collections.defaultdict(list)
+    hash_mapping = {}  # Store file hashes to detect duplicates
 
-    
+    # First pass: Calculate hashes and identify duplicates
     for file in os.listdir(folder_path):
+        file_path = os.path.join(folder_path, file)
         
-        if os.path.isdir(os.path.join(folder_path, file)) or file.endswith('_files'):
+        if os.path.isdir(file_path) or file.endswith('_files'):
             continue
             
+        # Calculate file hash
+        try:
+            file_hash = get_file_hash(file_path)
+        except Exception as e:
+            print(f"Error reading {file}: {str(e)}")
+            continue
+
         file_type = os.path.splitext(file)[1][1:].lower()
-        if file_type:  
-            file_mapping[file_type].append(file)
+        if file_type:
+            if file_hash in hash_mapping:
+                print(f"Duplicate found: {file} is identical to {hash_mapping[file_hash]}")
+                try:
+                    os.remove(file_path)  # Remove duplicate file
+                    print(f"Removed duplicate: {file}")
+                    continue
+                except Exception as e:
+                    print(f"Error removing duplicate {file}: {str(e)}")
+            else:
+                hash_mapping[file_hash] = file
+                file_mapping[file_type].append(file)
 
-
+    # Second pass: Move unique files to type folders
     for file_type, files in file_mapping.items():
-        
         type_folder = os.path.join(folder_path, f"{file_type}_files")
         os.makedirs(type_folder, exist_ok=True)
-        
         
         for file in files:
             source = os.path.join(folder_path, file)
@@ -90,7 +115,7 @@ def main():
         
        
         if input("\nWould you like to organize another folder? (y/n): ").lower() != 'y':
-            print("Exiting program...")
+            print("Exiting program")
             break
 
 if __name__ == "__main__":
