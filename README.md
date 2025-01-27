@@ -1,6 +1,6 @@
 #
 
-organises your folders according to their extension and removes duplicates
+organises your files according to their extension and removes duplicates
 
 Clone the repository:
 ```sh
